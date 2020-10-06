@@ -13,4 +13,4 @@ sudo apt-get update && sudo apt-get install -yq awscli libs3-2
 
 s3="aws s3 --endpoint=https://us-east-1.linodeobjects.com"
 
-${s3} sync $CWD/public/ s3://ci.smuggle.us/PR-$TRAVIS_PULL_REQUEST
+${s3} sync --acl public-read $CWD/public/ s3://${S3_BUCKET}/PR-$TRAVIS_PULL_REQUEST
