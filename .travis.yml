@@ -8,9 +8,9 @@ jobs:
     - stage: deploy-live
       install: hugo
       script: ./.ci/deploy.sh
-      skip_cleanup: true
       deploy: &s3
         provider: s3
+        skip_cleanup: true
         access_key_id: "$S3_ACCESS_KEY"
         secret_access_key: "$S3_SECRET_KEY"
         bucket: "ci.smuggle.us"
