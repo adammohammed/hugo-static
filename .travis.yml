@@ -18,7 +18,9 @@ jobs:
         endpoint: https://us-east-1.linodeobjects.com
     - stage: deploy-pr
       before_install: ./.ci/modify-config.sh
-      install: hugo
+      install:
+        - ./.ci/modify-config.sh
+        - hugo
       script: ./.ci/deploy-pr.sh
 
 stages:
