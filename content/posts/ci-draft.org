@@ -1,0 +1,6 @@
+#+title: My shiny new post
+#+subtitle: Let's do a CI Demo
+#+date: 2020-10-06
+#+tags[]: CI
+
+Let's upload this new post to a demo environment
