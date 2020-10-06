@@ -1,0 +1,4 @@
+baseURL = "https://ci.smuggle.us/"
+languageCode = "en-us"
+title = "AdamMoBlog"
+theme = "ananke"
