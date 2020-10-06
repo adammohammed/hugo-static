@@ -17,7 +17,9 @@ jobs:
         local_dir: public
         endpoint: https://us-east-1.linodeobjects.com
     - stage: deploy-pr
-      install: hugo
+      install:
+        - ./.ci/modify-config.sh
+        - hugo
       script: ./.ci/deploy-pr.sh
 
 stages:
