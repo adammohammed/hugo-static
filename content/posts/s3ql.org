@@ -1,6 +1,6 @@
 #+title: S3QL - A filesystem built on S3
 #+subtitle: Easy file sync
-#+date: 2020-09-03
+#+date: 2020-10-06
 #+tags[]: s3ql object-storage S3 filesystem
 This was something I stumbled upon while looking for a solution to sync my org-mode notes between machines. I tried simple things like just running =s3cmd sync= after saving my files. After that I graduated to using ~watchmedo~ from the python library [[https://github.com/gorakhargosh/watchdog][watchdog]]. With that mode, I had a command to upload the recently changed file to s3.
 
