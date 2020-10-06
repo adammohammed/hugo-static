@@ -17,7 +17,6 @@ jobs:
         local_dir: public
         endpoint: https://us-east-1.linodeobjects.com
     - stage: deploy-pr
-      before_install: ./.ci/modify-config.sh
       install:
         - ./.ci/modify-config.sh
         - hugo
