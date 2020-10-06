@@ -12,8 +12,9 @@ jobs:
         provider: s3
         access_key_id: "$S3_ACCESS_KEY"
         secret_access_key: "$S3_SECRET_KEY"
-        bucket: "ci.smuggle.us"
+        bucket: "$S3_BUCKET"
         edge: true
+        acl: public_read
         local_dir: public
         endpoint: https://us-east-1.linodeobjects.com
     - stage: deploy-pr
