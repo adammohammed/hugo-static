@@ -1,0 +1,13 @@
+* Pushing a Hugo Static Site to S3 with CI
+
+This is a demo of how to utilize CI to build and deploy static sites to any S3 provider.
+
+** Pipeline
+
+*** Commits (and merges) to Master
+
+    Any commit to master will be pushed to the live website automatically. If a build fails for whatever reason, the website will note be updated.
+
+*** Pull Requests
+
+    Any experimental change, or in GitHub terms, Pull Request, will be deployed to a test environment, so other collaborators can view the change. In this case, the pipeline deploys PR changes to website.com/PR-I, where =I= is the pull request number.
