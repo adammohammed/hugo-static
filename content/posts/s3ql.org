@@ -1,0 +1,92 @@
+#+title: S3QL - A filesystem built on S3
+#+subtitle: Easy file sync
+#+date: 2020-09-03
+#+tags[]: s3ql object-storage S3 filesystem
+This was something I stumbled upon while looking for a solution to sync my org-mode notes between machines. I tried simple things like just running =s3cmd sync= after saving my files. After that I graduated to using ~watchmedo~ from the python library [[https://github.com/gorakhargosh/watchdog][watchdog]]. With that mode, I had a command to upload the recently changed file to s3.
+
+This worked well, but because I never made it a true daemon, I had to make sure that I started the =watchmedo= command, otherwise nothing would be synced.
+
+I then thought I'd make I'd try to make an after-save-hook that uploaded the files to s3, but didn't feel like writing an s3 client in elisp, so I was just going to call s3cmd from the hook. Before starting this though I figured I would checkout s3fs and see if it would be something I could use instead. When reading the docs, I found [[https://github.com/s3ql/s3ql][s3ql]] as a related project.
+
+For me it was pretty easy to setup, but I figured I'll show what I did to get it working with Linode Object Storage.
+
+** Getting S3QL installed
+   I'm running this on an ubuntu 20.04 machine, but s3ql should work on other distros as well, though the install steps may be different.
+    #+BEGIN_SRC bash
+apt-get update && apt-get upgrade
+apt-get install s3ql
+    #+END_SRC
+
+** Creating the authfile
+
+   S3ql credentials can be specified at runtime, but this makes it easier to setup mounting the storage as a service later on. The login and password are just your s3 credentials. ~s3c~ is not a typo here, this is the format for S3 URLs that are not AWS. The ~fs-passphrase~, if set, encrypts the filesystem.
+    #+BEGIN_SRC ini :name authinfo2
+[default]
+storage-url: s3c://
+backend-login: Your ACCESS_KEY
+backend-password: Your SECRET_KEY
+
+[fs1]
+storage-url: s3c://us-east-1.linodeobjects.com/bucket-name/prefix
+fs-passphrase: useagoodpassword
+    #+END_SRC
+
+    Here =[fs1]= inherits its credentials from the ~[default]~ section. If you notice the last part of the path is ~prefix~, this is s3ql's way to allow you to create multiple file systems from one bucket. If you were to use this bucket for another file system you can create another ~[fs2]~ block where the ~storage-url~ has a different ~prefix~.
+
+    The default location according to the docs are =~/.s3ql/authinfo2=, so I saved the file there and set it so its only read/writable by the owner.
+    #+BEGIN_SRC bash
+chmod 600 authinfo2
+    #+END_SRC
+
+** Creating the filesystem
+
+   First we're going to need a bucket that will house the filesystem. This needs to match the bucket specified in the ~storage-url~ within the ~[fs1]~ block in your ~authinfo2~ file.
+    #+BEGIN_SRC bash
+s3cmd mb s3://bucket-name
+    #+END_SRC
+
+
+    Now that we have the bucket we can create the filesystem. If your ~.authinfo2~ file is done correctly this command shouldn't need any input on the command-line.
+    #+BEGIN_SRC bash
+mkfs.s3ql -L my-notes --authfile ~/.s3ql/authinfo2 --debug \
+s3c://us-east-1.linodeobjects.com/bucket-name/prefix
+    #+END_SRC
+
+** Mount the filesystem
+
+   Now that we have made our s3-backed filesystem, we can mount it as we would any other filesystem. You can mount it anywhere you'd like, I put the folder under ~/srv/myfolder~. The ~--allow-other~ option here allows the file system to be modfied by users other than the one that mounted it.
+    #+BEGIN_SRC bash
+mkdir -p /srv/myfolder
+sudo mount.s3ql --authfile ~/.s3ql/authinfo2 --allow-other \
+s3c://us-east-1.linodeobjects.com/bucket-name/prefix /srv/myfolder
+    #+END_SRC
+
+    At this point you should be able to write to the /srv/myfolder file and S3ql will handle the rest, chunking and storing your files to S3.
+
+** Auto mount the filesystem
+
+   The goal of this was to have a way to sync my notes across machines, so let's automatically mount the filesystem so we can be sure that the notes are synced.
+    #+BEGIN_SRC ini
+[Unit]
+Description=Service that mounts the S3QL filesystem
+
+[Service]
+ExecStart=/usr/bin/mount.s3ql --fg --authfile /path/to/.s3ql/authinfo2 --allow-other s3c://us-east-1.linodoebjects.com/bucket-name/prefix /srv/myfolder
+ExecStop=/usr/bin/umount.s3ql /srv/myfolder
+
+[Install]
+WantedBy=multi-user.target
+    #+END_SRC
+
+    Save that as ~/etc/systemd/system/s3ql-notes.service~ and then we can enable and start the service. (If you have mounted the filesystem already, from previous steps, you should unmount it with ~umount.s3ql /srv/myfolder~ first.
+
+    #+BEGIN_SRC bash
+    sudo systemctl enable s3ql-notes
+    sudo systemctl start s3ql-notes
+    #+END_SRC
+
+    Of course, if you want to unmount the file system you can stop the service manually.
+
+    #+BEGIN_SRC bash
+    sudo systemctl stop s3ql-notes
+    #+END_SRC
